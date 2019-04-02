@@ -69,35 +69,25 @@ podatkovno bazo.
 
 Pridobivanje podatkov
 ---------------------
-
+```
 for i in range(2010,2020,1):
-
 path = "https://www.policija.si/baza/pn" + str(i) + ".zip"
-
 \#path = "https://www.policija.si/baza/pn2010.zip"
-
 resp = urlopen(path)
-
 zipfile = ZipFile(BytesIO(resp.read()))
-
 zipfile.extractall("./files")
+```
 
 Združevanje podatkov
 --------------------
-
-*os.chdir("c:/_PERSONAL/FRI/PR/Projekt/files")*
-
-*results = pd.DataFrame([])*
-
-*for counter, file in enumerate(glob.glob("PN\*.csv")):*
-
-*namedf = pd.read_csv("./" +file,
-error_bad_lines=False,sep=';',encoding="ANSI")*
-
-*results = results.append(namedf)*
-
-*results.to_csv('./PrometneNesrece.csv')*
-
+```
+os.chdir("c:/_PERSONAL/FRI/PR/Projekt/files")
+results = pd.DataFrame([])
+for counter, file in enumerate(glob.glob("PN\*.csv")):
+    namedf = pd.read_csv("./" +file,error_bad_lines=False,sep=';',encoding="ANSI")
+    results = results.append(namedf)
+    results.to_csv('./PrometneNesrece.csv')
+```
 Čiščenje podatkov
 -----------------
 
@@ -137,6 +127,44 @@ prometnih nesreč v 6 segmentov: '\<2', '2-5', '5-10', '10-20', '20-30', '30+'
 Pri analizi prometnih nesreč želim primerjati koliko prometnih nesreč povzročijo
 slovenski državljani in koliko prometnih nesreč povzročijo tuji državljani.
 
+```
+def ReplaceValues(df1):
+    df1['DatumPNConverted'] = pd.to_datetime(df1['DatumPN'], format='%d.%m.%Y')
+    #df1['DatumPN'] = df1['DatumPN'].map(lambda date_string: datetime.strptime(date_string, "%d.%m.%Y"))
+
+def ReplaceDataStructure(df1):
+    df1 = df
+    ReplaceValues(df1)
+    df1['ZaporednaStevilkaPN'] = pd.to_numeric(df1['ZaporednaStevilkaPN'], errors='coerce')
+    df1['Dan'] = df1['DatumPNConverted'].dt.day
+    df1['Leto'] = df1['DatumPNConverted'].dt.year
+    df1['Mesec'] = df1['DatumPNConverted'].dt.month
+    df1['MesecNaziv'] = df1['Mesec'].replace(monthName, regex=True)
+    df1['DanVTednu'] = df1['DatumPNConverted'].dt.day_name()
+    df1['DanVTednuStevilka'] = df1['DanVTednu'].replace(dayNumber, regex=True)
+    df1['DanVTednu'] = df1['DanVTednu'].replace(day, regex=True)
+    df1['DrzavljanstvoSkupina'] = np.where((df1['Drzavljanstvo']!='SLOVENIJA') & (df1['Drzavljanstvo']!='NEZNANO'), 'TUJEC', df1['Drzavljanstvo'])
+    df1['DrzavljanstvoSkupina']  = df1['DrzavljanstvoSkupina'].astype('category')
+    #------------------------------------------------------------------------------------------------------v
+    #Pripravi starostne razrede za lažji porazdelitev 
+    #------------------------------------------------------------------------------------------------------v
+    bins = [0, 16, 18, 21, 50, 65, np.inf]
+    names = ['<16', '16-18', '18-21','21-50', '50-65', '65+']
+    df1['StarostniRazred'] = pd.cut(df1['Starost'], bins, labels=names)
+    df1['StarostniRazred']  = df1['StarostniRazred'].astype('category')
+    
+    #------------------------------------------------------------------------------------------------------v
+    #Pripravi razrede za vozniski staz za lažjo porazdelitev
+    #------------------------------------------------------------------------------------------------------v
+    bins = [0,2,5, 10,20,30, np.inf]
+    names = ['<2', '2-5', '5-10', '10-20', '20-30', '30+']
+    df1['VozniskiStazVLetihRazred'] = pd.cut(df1['VozniskiStazVLetih'], bins, labels=names)
+    df1['VozniskiStazVLetihRazred'] = np.where((df1['VozniskiStazVLetih'] == 0) & (df1['VozniskiStazVMesecih'] > 0), '<2', df1['VozniskiStazVLetihRazred'])
+    df1['VozniskiStazVLetihRazred']  = df1['VozniskiStazVLetihRazred'].astype('category')
+    
+    df1 = df1.join(df1.apply(convertCoords, axis=1))
+```
+
 Glavne ugotovitve
 =================
 
@@ -157,12 +185,46 @@ Iz analize vidimo, da je število prometnih nesreč do leta 2017 bilo v upadu.
 Medtem, ko je leta 2018 število prometnih nesreč naraslo. Zanimivo pa je
 dejstvo, da se število prometnih nesreč s smrtnim izidom iz leta v leto niža.
 Velik vpliva na to imajo najbrž preventivne akcije, dobra osveščenost ljudi.
-
-![](media/5e9e80ae56cbd17b0b2c931ef6748832.png)
-
-![](media/f4de1b082c2bbcf53bc363673d9b6639.png)
-
-![](media/da5d86552c5c758da73c65054efcdad6.png)
+```
+def PrometneNesrecePoLetih(df):
+        # ----------------------------------------------------------------------
+    # 1. del: Število prometnih nesreč po letih
+    # ----------------------------------------------------------------------
+    df = df1
+    # set up data
+    trafficDataByYear_df = df[['Leto','Mesec','KlasifikacijaNesrece','ZaporednaStevilkaPN']].copy()
+    #-------------------------------------------------------------------------------------------------------------------
+    #testiranje modela in pravilnost podatkov
+    #-------------------------------------------------------------------------------------------------------------------
+    trafficDataByYear_df = trafficDataByYear_df.rename_axis(None)
+#    trafficDataByYear_df = trafficDataByYear_df.groupby(['Leto'])['ZaporednaStevilkaPN'].nunique() 
+#    trafficDataByYear_df = trafficDataByYear_df.reset_index()[['Leto','ZaporednaStevilkaPN']]
+#    trafficDataByYear_df.rename(columns={'ZaporednaStevilkaPN':'Stevilo nesrec'}, 
+#                                inplace=True )
+#    trafficDataByYear_df.set_index('Leto')
+    trafficDataByYear_df = trafficDataByYear_df.groupby(['Leto'])['ZaporednaStevilkaPN'].agg({'Število oseb':'size', 'Število nesreč':'nunique'})
+    trafficDataByYear_df = trafficDataByYear_df.reset_index()[['Leto','Število oseb','Število nesreč']]
+    trafficDataByYear_df.set_index('Leto')
+    trafficDataByYear_df = trafficDataByYear_df.query("Leto > 2011 & Leto < 2019")
+    
+    plt.rcParams['figure.figsize'] = [13,5]
+    plt.plot(trafficDataByYear_df['Leto'], 
+            trafficDataByYear_df['Število nesreč'],'b-',label = 'Število nesreč'
+           )
+#    plt.plot(trafficDataByYear_df['Leto'], 
+#            trafficDataByYear_df['Število oseb'],'r-',label = 'Število oseb'
+#           )
+    
+#    plt.bar(trafficDataByYear_df['Leto'], 
+#            trafficDataByYear_df['Stevilo nesrec']
+#            ,align='center', linewidth=1, alpha=0.75
+#            ,edgecolor='black')
+    plt.title("Število nesreč po letih", size=16)
+    plt.xlabel("Leto", size=13)
+    plt.ylabel("Število nesreč", size=13)
+    plt.legend();
+    plt.show()
+```
 
 Povprečno število oseb v prometnih nesrečah po letih
 ----------------------------------------------------
@@ -172,8 +234,18 @@ sklepamo, da so v prometnih nesrečah v povprečju udeležene manj kot 2 osebi.
 Največje povprečno število udeleženih oseb v prometnih nesrečah je bilo leta
 2015. Za podrobno analizo povprečnega števila oseb bom v nadaljevanju projekta
 razdelil osebe po vrsti udeleženca.
+```
+plt.rcParams['figure.figsize'] = [13,5]
+    plt.plot(trafficDataByYear_df['Leto'], 
+            trafficDataByYear_df['Število oseb'] / trafficDataByYear_df['Število nesreč'],'y-',label = 'Povprečno število oseb na prometno nesrečo '
+           )
+    plt.title("Povprečno število oseb udeleženih v prometnih nesrečah", size=16)
+    plt.xlabel("Leto", size=13)
+    plt.ylabel("Povprečno število oseb", size=13)
+    plt.legend();
+    plt.show()
+```
 
-![](media/d3fad95b3ed4d01b4a7b8065ffe4ba48.png)
 
 Distribucija starosti povzročiteljev prometnih nesreč
 -----------------------------------------------------
@@ -182,9 +254,23 @@ Analiza starosti povzročiteljev prometnih nesreč kaže na to, da največ prome
 nesreč povzročijo osebe v zgodnjih 20 letih. To so osebe, ki imajo kratek
 vozniški stalež. Torej neizkušeni vozniki, ki v večini primerov precenjujejo
 svoje sposobnosti.
-
-![](media/b4095cd911a20c690b911e4c5a3dd36e.png)
-
+```
+  starost_df = df1
+    starost_df = starost_df[['DatumPNConverted', 'Leto', 'Dan', 'Mesec', 'ZaporednaStevilkaOsebeVPN','VrstaUdelezenca', 'Povzrocitelj','Starost', 
+                         'VozniskiStazVLetih','Spol','ZaporednaStevilkaPN']].copy()
+    
+    bins = [0, 16, 18, 21, 50, 65, np.inf]
+    names = ['<16', '16-18', '18-21','21-50', '50-65', '65+']
+    
+    starost_df['AgeRange'] = pd.cut(starost_df['Starost'], bins, labels=names)
+        
+    starost_povz_df = starost_df[starost_df["Povzrocitelj"]=="POVZROČITELJ"]
+    
+    starost_povz_df.hist(column='Starost', bins=50)
+    plt.title("Distribucija starosti povrzočiteljev prometnih nesreč", size=16)
+    plt.xlabel("Starost", size=13)
+    plt.ylabel("Število prometnih nesreč", size=13)
+```
 Struktura podatkov
 ==================
 
