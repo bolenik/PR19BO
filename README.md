@@ -1,11 +1,11 @@
-                               **Borut Olenik**
-                               ----------------
+**Borut Olenik**
+----------------
 
-                        ##**Analiza prometnih nesreč v Sloveniji**
-                        ===========================================
+**Analiza prometnih nesreč v Sloveniji**
+===========================================
 
-                    Projekt pri predmetu Podatkovno rudarjenje
-                    ------------------------------------------
+Projekt pri predmetu Podatkovno rudarjenje
+------------------------------------------
 
 MENTOR: doc. dr. Tomaž Curk
 
@@ -179,7 +179,8 @@ povzročitelja oz. udeleženca prometne nesreče manj kot 0 let, zato sem pri
 analizi udeležencev prometne nesreče take podatke odstranil.
 
 Prav tako sem pri analizi staleža vozniškega dovoljenja odstranil podatke, kjer
-je *Starost osebe – Stalež vozniškega dovoljenja \< 0*.
+je stalež vozniškega dovoljenja večji od starosti osebe, ker je to napaka v podatkih
+```Starost osebe – Stalež vozniškega dovoljenja < 0```
 
 Razdelitev prometnih nesreč po letih
 ------------------------------------
