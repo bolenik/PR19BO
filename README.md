@@ -13,7 +13,7 @@ V projektni nalogi obravnavam problematiko prometnih nesreč v Sloveniji. V ta
 namen analiziram podatke prometnih nesreč, ki sem jih pridobil na spletni strani
 slovenske policije
 <https://www.policija.si/o-slovenski-policiji/statistika/prometna-varnost>.
-Osredotočil se bom na analizo samih prometnih nesreč, kot tudi na udeležence
+Osredotočil se bom na analizo prometnih nesreč, kot tudi na udeležence
 prometnih nesreč. Iz analiz želim spoznati kateri dejavniki vplivajo na prometne
 nesreče.
 
@@ -27,6 +27,14 @@ Struktura podatkov, ki sem jih opisal ob predlogu projekta se je drastično
 spremenila. V vmesnem obdobju so na strani slovenske policije spremenili
 strukturo podatkov, zato sem moral analize, ki sem jih imel že pripravljene
 spremeniti na novo strukturo podatkov.
+
+**Glavna vprašanja skozi analizo podatkov**
+- Kako vpliva prisotnost in stopnja alkohola na prometne nesreče po različnih dimenzijah?
+- Kako vpliva starost povzročitelja na prometne nesreče?
+- Kako vpliva vozniški stalež na prometne nesreče?
+- Ali vpliva število potnikov na prometno nesrečo? Se več nesreč zgodi, ko je v nesreči prisotna ena oseba, ali več nesreč ko je v avtomobilu prisotnih več oseb?
+- Ali so se v zadnjih letih zgodile množične nesreče? Kaj je bil poglavitni razlog za množične nesreče?
+- Kako vplivajo vremenske razmere na prometne nesreče po različnih dimenzijah?
 
 OPIS PODATKOV
 =============
@@ -60,11 +68,12 @@ nesrečo. V ta namen sem pridobil ARSO zgodovinske podatke o vremenu. Podatke se
 pridobil za nekaj pomembni mest ter jih shranil v CSV datoteki. Podatki so javno
 dostopni na spletni strani <http://meteo.arso.gov.si/met/sl/archive/>.
 
-PRIPRAVA PODATKOV
+PREDPROCESIRANJE PODATKOV
 =================
 
 Podatki prometnih nesreč v Sloveniji so shranjeni v različnih datotekah na
-spletu. Zaradi optimizacije in možnosti pridobivanja podatkov v prihodnosti sem
+spletu. Za potrebe nadaljnjih analiz je potrebno podatke združiti v eno datoteko.
+Zaradi optimizacije in možnosti pridobivanja podatkov v prihodnosti sem
 pripravil proceduro, s pomočjo katere podatke pridobimo iz spleta. Za potrebe
 analiz sem se odločil za prometne nesreče od leta 2010 naprej. Datoteke sem
 ekstrahiral na lokalni disk. Za potrebe celovite analize jih združimo v eno
@@ -94,14 +103,14 @@ for counter, file in enumerate(glob.glob("PN\*.csv")):
 Čiščenje podatkov
 -----------------
 
-Ker je podatkovna baza prometnih nesreč pripravljena v obliki, ki ni najbolj
-primerna za napredne analize je potrebno podatke ustrezno prečistiti.
+Podatkovna baza prometnih nesreč je pripravljena v obliki, ki ni najbolj
+primerna za napredne analize, zato je potrebno podatke ustrezno prečistiti.
 
-**Štetje prometnih nesreč**
+**Razumevanje podatkov za štetje prometnih nesreč in udeležencev**
 
 Izziv, ki sem ga zasledil je bila skupna podatkovna baza za nesreče in
 udeležence nesreč. V ta namen je potrebno ob analizi prometnih nesreč – štetje
-prometnih nesreč upoštevati razlikovalno štetje prometnih nesreč po stolpcu
+prometnih nesreč upoštevati razlikovalno štetje prometnih nesreč po atributu
 *ZaporednaStevilkaPN.* V primeru analize udeležencev prometnih nesreč ni potrebe
 po razlikovalnem štetju, temveč se uporabi normalno štetje.
 
@@ -124,6 +133,17 @@ nesrečo. Podatke sem razdelil v naslednje razrede: '\<16', '16-18',
 Ali stalež vozniškega dovoljenja vpliva na prometno nesrečo? S pomočjo razredov
 staležev vozniškega dovoljenja sem segmentiral udeležence oz. povzročitelje
 prometnih nesreč v 6 segmentov: '\<2', '2-5', '5-10', '10-20', '20-30', '30+'
+
+**Pretvorba lokacijskih koordinat**
+
+Lokacija posamezne prometne nesreče je predstavljena v Gauss-Krugerjevem koordinatnem sistemu.
+V primeru, ko želimo podatke uporabiti v orodjih za lokacijsko predstavitev je potrebno podatke pretvoriti v 
+geografsko širino in dolžino. To sem uredil s pomočjo knjižnice *pyproj*
+```
+def convertCoords(row):
+    x2,y2 = p2(row['GeoKoordinataY'],row['GeoKoordinataX'],inverse=True)
+    return pd.Series({'newLong':y2,'newLat':x2})
+```
 
 **Ureditev razreda državljanstev**
 
@@ -299,9 +319,13 @@ svoje sposobnosti.
     plt.xlabel("Starost", size=13)
     plt.ylabel("Število prometnih nesreč", size=13)
 ```
+Nadaljnji koraki
+==================
+
 Struktura podatkov
 ==================
 
+Ker se je vir podatkov na spletni strani slovenske policije spremenil je v nadaljevanju opisana struktura.
 Struktura podatkovne baze prometnih nesreč
 ------------------------------------------
 Nova struktura baze prometnih nesreč (PN):
