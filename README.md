@@ -1,8 +1,8 @@
                                **Borut Olenik**
                                ----------------
 
-                        Analiza prometnih nesreč v Sloveniji
-                        ====================================
+                        ##**Analiza prometnih nesreč v Sloveniji**
+                        ===========================================
 
                     Projekt pri predmetu Podatkovno rudarjenje
                     ------------------------------------------
