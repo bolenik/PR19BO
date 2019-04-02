@@ -1,8 +1,11 @@
-**Borut Olenik**
+                               **Borut Olenik**
+                               ----------------
 
-Analiza prometnih nesreč v Sloveniji
+                        Analiza prometnih nesreč v Sloveniji
+                        ====================================
 
-Projekt pri predmetu Podatkovno rudarjenje
+                    Projekt pri predmetu Podatkovno rudarjenje
+                    ------------------------------------------
 
 MENTOR: doc. dr. Tomaž Curk
 
