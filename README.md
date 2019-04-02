@@ -232,7 +232,6 @@ def PrometneNesrecePoLetih(df):
 
 Povprečno število oseb v prometnih nesrečah po letih
 ----------------------------------------------------
-
 Iz analize povprečnega števila oseb udeleženih v prometnih nesrečah lahko
 sklepamo, da so v prometnih nesrečah v povprečju udeležene manj kot 2 osebi.
 Največje povprečno število udeleženih oseb v prometnih nesrečah je bilo leta
@@ -250,6 +249,34 @@ plt.rcParams['figure.figsize'] = [13,5]
     plt.show()
 ```
 
+Normalizirano število prometnih nesreč po mesecih v letu 2018
+----------------------------------------------------
+Ker je število prometnih nesreč po mesecih zaradi različne dolžine mesecev lahko različno sem zaradi boljše predstave podatke pripravil na način, da sem jih normaliziral glede na število dni v posameznem mesecu. Iz analize sem ugotovil, da je bilo v letu 2018 največ nesreč v mesecu juniju 2018.
+```
+ # set up data
+    trafficDataByMonth_df = df1[['DatumPN', 'Leto', 'Dan', 'Mesec', 'VNaselju','ZaporednaStevilkaPN']].copy()
+    #-------------------------------------------------------------------------------------------------------------------
+    #testiranje modela in pravilnost podatkov
+    #-------------------------------------------------------------------------------------------------------------------
+    trafficDataByMonth_df = trafficDataByMonth_df.rename_axis(None)
+    trafficDataByMonth_df = trafficDataByMonth_df.groupby(['Leto','Mesec'])['ZaporednaStevilkaPN'].nunique() 
+    trafficDataByMonth_df = trafficDataByMonth_df.reset_index()[['Leto','Mesec', 'ZaporednaStevilkaPN']]
+    trafficDataByMonth_df.rename(columns={'ZaporednaStevilkaPN':'Stevilo nesrec'}, 
+                                inplace=True )
+
+    trafficDataByMonth_df= trafficDataByMonth_df.query("Leto == 2018")
+    # add length column to allow normalization by month lengths
+    # trafficDataByMonth_df['StDniVMesecu'] = trafficDataByMonth_df['DatumPN'].dt.daysinmonth
+    trafficDataByMonth_df['StDniVMesecu'] = monthLength_list
+    
+
+    # normalizirano število nesreč po mesecih v letu 2018
+    plt.rcParams['figure.figsize'] = [13,5]
+    plt.bar(trafficDataByMonth_df['Mesec'], 
+            trafficDataByMonth_df['Stevilo nesrec']/trafficDataByMonth_df['StDniVMesecu']
+            ,  align='center', linewidth=1, alpha=0.75
+            ,edgecolor='black', tick_label=month_list)
+``` 
 
 Distribucija starosti povzročiteljev prometnih nesreč
 -----------------------------------------------------
@@ -262,9 +289,6 @@ svoje sposobnosti.
   starost_df = df1
     starost_df = starost_df[['DatumPNConverted', 'Leto', 'Dan', 'Mesec', 'ZaporednaStevilkaOsebeVPN','VrstaUdelezenca', 'Povzrocitelj','Starost', 
                          'VozniskiStazVLetih','Spol','ZaporednaStevilkaPN']].copy()
-    
-    bins = [0, 16, 18, 21, 50, 65, np.inf]
-    names = ['<16', '16-18', '18-21','21-50', '50-65', '65+']
     
     starost_df['AgeRange'] = pd.cut(starost_df['Starost'], bins, labels=names)
         
@@ -280,80 +304,44 @@ Struktura podatkov
 
 Struktura podatkovne baze prometnih nesreč
 ------------------------------------------
-
 Nova struktura baze prometnih nesreč (PN):
-
 -   številka za štetje in ločevanje posamezne prometne nesreče
-
 -   klasifikacija nesreče glede na posledice (Izračuna se avtomatično glede na
     najhujšo posledico pri udeležencih v prometni nesreči)
-
 -   upravna enota, na območju katere se je zgodila prometna nesreča
-
 -   datum nesreče (format: dd.mm.llll) 
-
 -   ura nesreče (format: hh) 
-
 -   indikator ali se je nesreča zgodila v naselju (D) ali izven (N)
-
 -   lokacija nesreče
-
 -   vrsta ceste ali naselja na kateri je prišlo do nesreče
-
 -   oznaka ceste ali šifra naselja kjer je prišlo do nesreče
-
 -   tekst ceste ali naselja, kjer je prišlo do nesreče
-
 -   oznaka odseka ceste ali šifra ulice, kjer je prišlo do nesreče
-
 -   tekst odseka ali ulice, kjer je prišlo do nesreče
-
 -   točna stacionaža ali hišna številka, kjer je prišlo do nesreče
-
 -   opis prizorišča nesreče
-
 -   glavni vzrok nesreče
-
 -   tip nesreče
-
 -   vremenske okoliščine v času nesreče
-
 -   stanje prometa v času nesreče
-
 -   stanje vozišča v času nesreče
-
 -   stanje površine vozišča v času nesreče
-
 -   Geo Koordinata X (Gauß-Krüger-jev koordinatni sistem)
-
 -   Geo Koordinata Y (Gauß-Krüger-jev koordinatni sistem)
-
 -   številka za štetje in ločevanje oseb, udeleženih v prometnih nesrečah
-
 -   kot kaj nastopa oseba v prometni nesreči
-
 -   starost osebe (LL)
-
 -   spol
-
 -   upravna enota stalnega prebivališča
-
 -   državljanstvo osebe
-
 -   poškodba osebe
-
 -   vrsta udeleženca v prometu
-
 -   ali je oseba uporabljala varnostni pas ali čelado (polje se interpretira v
     odvisnosti od vrste udeleženca) (Da/Ne)
-
 -   vozniški staž osebe za kategorijo, ki jo potrebuje glede na vrsto udeleženca
     v prometu (LL)
-
 -   vozniški staž osebe za kategorijo, ki jo potrebuje glede na vrsto udeleženca
     v prometu (MM)
-
 -   vrednost alkotesta za osebo, če je bil opravljen (n.nn)
-
 -   vrednost strokovnega pregleda za osebo, če je bil odrejen in so rezultati že
     znani (n.nn)
