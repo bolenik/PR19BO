@@ -1,8 +1,8 @@
-**Borut Olenik**
-----------------
+Borut Olenik
+------------
 
-**Analiza prometnih nesreč v Sloveniji**
-===========================================
+Analiza prometnih nesreč v Sloveniji
+====================================
 
 Projekt pri predmetu Podatkovno rudarjenje
 ------------------------------------------
@@ -13,9 +13,8 @@ V projektni nalogi obravnavam problematiko prometnih nesreč v Sloveniji. V ta
 namen analiziram podatke prometnih nesreč, ki sem jih pridobil na spletni strani
 slovenske policije
 <https://www.policija.si/o-slovenski-policiji/statistika/prometna-varnost>.
-Osredotočil se bom na analizo prometnih nesreč, kot tudi na udeležence
-prometnih nesreč. Iz analiz želim spoznati kateri dejavniki vplivajo na prometne
-nesreče.
+Osredotočil se bom na analizo prometnih nesreč, kot tudi na udeležence prometnih
+nesreč. Iz analiz želim spoznati kateri dejavniki vplivajo na prometne nesreče.
 
 UVOD
 ====
@@ -28,13 +27,14 @@ spremenila. V vmesnem obdobju so na strani slovenske policije spremenili
 strukturo podatkov, zato sem moral analize, ki sem jih imel že pripravljene
 spremeniti na novo strukturo podatkov.
 
-**Glavna vprašanja skozi analizo podatkov**
-- Kako vpliva prisotnost in stopnja alkohola na prometne nesreče po različnih dimenzijah?
-- Kako vpliva starost povzročitelja na prometne nesreče?
-- Kako vpliva vozniški stalež na prometne nesreče?
-- Ali vpliva število potnikov na prometno nesrečo? Se več nesreč zgodi, ko je v nesreči prisotna ena oseba, ali več nesreč ko je v avtomobilu prisotnih več oseb?
-- Ali so se v zadnjih letih zgodile množične nesreče? Kaj je bil poglavitni razlog za množične nesreče?
-- Kako vplivajo vremenske razmere na prometne nesreče po različnih dimenzijah?
+**Glavna vprašanja skozi analizo podatkov** - Kako vpliva prisotnost in stopnja
+alkohola na prometne nesreče po različnih dimenzijah? - Kako vpliva starost
+povzročitelja na prometne nesreče? - Kako vpliva vozniški stalež na prometne
+nesreče? - Ali vpliva število potnikov na prometno nesrečo? Se več nesreč zgodi,
+ko je v nesreči prisotna ena oseba, ali več nesreč ko je v avtomobilu prisotnih
+več oseb? - Ali so se v zadnjih letih zgodile množične nesreče? Kaj je bil
+poglavitni razlog za množične nesreče? - Kako vplivajo vremenske razmere na
+prometne nesreče po različnih dimenzijah?
 
 OPIS PODATKOV
 =============
@@ -69,37 +69,40 @@ pridobil za nekaj pomembni mest ter jih shranil v CSV datoteki. Podatki so javno
 dostopni na spletni strani <http://meteo.arso.gov.si/met/sl/archive/>.
 
 PREDPROCESIRANJE PODATKOV
-=================
+=========================
 
 Podatki prometnih nesreč v Sloveniji so shranjeni v različnih datotekah na
-spletu. Za potrebe nadaljnjih analiz je potrebno podatke združiti v eno datoteko.
-Zaradi optimizacije in možnosti pridobivanja podatkov v prihodnosti sem
-pripravil proceduro, s pomočjo katere podatke pridobimo iz spleta. Za potrebe
-analiz sem se odločil za prometne nesreče od leta 2010 naprej. Datoteke sem
-ekstrahiral na lokalni disk. Za potrebe celovite analize jih združimo v eno
+spletu. Za potrebe nadaljnjih analiz je potrebno podatke združiti v eno
+datoteko. Zaradi optimizacije in možnosti pridobivanja podatkov v prihodnosti
+sem pripravil proceduro, s pomočjo katere podatke pridobimo iz spleta. Za
+potrebe analiz sem se odločil za prometne nesreče od leta 2010 naprej. Datoteke
+sem ekstrahiral na lokalni disk. Za potrebe celovite analize jih združimo v eno
 podatkovno bazo.
 
 Pridobivanje podatkov
 ---------------------
-```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 for i in range(2010,2020,1):
 path = "https://www.policija.si/baza/pn" + str(i) + ".zip"
 \#path = "https://www.policija.si/baza/pn2010.zip"
 resp = urlopen(path)
 zipfile = ZipFile(BytesIO(resp.read()))
 zipfile.extractall("./files")
-```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Združevanje podatkov
 --------------------
-```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 os.chdir("c:/_PERSONAL/FRI/PR/Projekt/files")
 results = pd.DataFrame([])
 for counter, file in enumerate(glob.glob("PN\*.csv")):
     namedf = pd.read_csv("./" +file,error_bad_lines=False,sep=';',encoding="ANSI")
     results = results.append(namedf)
     results.to_csv('./PrometneNesrece.csv')
-```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Čiščenje podatkov
 -----------------
 
@@ -136,21 +139,23 @@ prometnih nesreč v 6 segmentov: '\<2', '2-5', '5-10', '10-20', '20-30', '30+'
 
 **Pretvorba lokacijskih koordinat**
 
-Lokacija posamezne prometne nesreče je predstavljena v Gauss-Krugerjevem koordinatnem sistemu.
-V primeru, ko želimo podatke uporabiti v orodjih za lokacijsko predstavitev je potrebno podatke pretvoriti v 
-geografsko širino in dolžino. To sem uredil s pomočjo knjižnice *pyproj*
-```
+Lokacija posamezne prometne nesreče je predstavljena v Gauss-Krugerjevem
+koordinatnem sistemu. V primeru, ko želimo podatke uporabiti v orodjih za
+lokacijsko predstavitev je potrebno podatke pretvoriti v geografsko širino in
+dolžino. To sem uredil s pomočjo knjižnice *pyproj*
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def convertCoords(row):
     x2,y2 = p2(row['GeoKoordinataY'],row['GeoKoordinataX'],inverse=True)
     return pd.Series({'newLong':y2,'newLat':x2})
-```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **Ureditev razreda državljanstev**
 
 Pri analizi prometnih nesreč želim primerjati koliko prometnih nesreč povzročijo
 slovenski državljani in koliko prometnih nesreč povzročijo tuji državljani.
 
-```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def ReplaceValues(df1):
     df1['DatumPNConverted'] = pd.to_datetime(df1['DatumPN'], format='%d.%m.%Y')
     #df1['DatumPN'] = df1['DatumPN'].map(lambda date_string: datetime.strptime(date_string, "%d.%m.%Y"))
@@ -186,7 +191,7 @@ def ReplaceDataStructure(df1):
     df1['VozniskiStazVLetihRazred']  = df1['VozniskiStazVLetihRazred'].astype('category')
     
     df1 = df1.join(df1.apply(convertCoords, axis=1))
-```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Glavne ugotovitve
 =================
@@ -199,8 +204,8 @@ povzročitelja oz. udeleženca prometne nesreče manj kot 0 let, zato sem pri
 analizi udeležencev prometne nesreče take podatke odstranil.
 
 Prav tako sem pri analizi staleža vozniškega dovoljenja odstranil podatke, kjer
-je stalež vozniškega dovoljenja večji od starosti osebe, ker je to napaka v podatkih
-```Starost osebe – Stalež vozniškega dovoljenja < 0```
+je stalež vozniškega dovoljenja večji od starosti osebe, ker je to napaka v
+podatkih `Starost osebe – Stalež vozniškega dovoljenja < 0`
 
 Razdelitev prometnih nesreč po letih
 ------------------------------------
@@ -209,7 +214,8 @@ Iz analize vidimo, da je število prometnih nesreč do leta 2017 bilo v upadu.
 Medtem, ko je leta 2018 število prometnih nesreč naraslo. Zanimivo pa je
 dejstvo, da se število prometnih nesreč s smrtnim izidom iz leta v leto niža.
 Velik vpliva na to imajo najbrž preventivne akcije, dobra osveščenost ljudi.
-```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def PrometneNesrecePoLetih(df):
         # ----------------------------------------------------------------------
     # 1. del: Število prometnih nesreč po letih
@@ -248,16 +254,18 @@ def PrometneNesrecePoLetih(df):
     plt.ylabel("Število nesreč", size=13)
     plt.legend();
     plt.show()
-```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Povprečno število oseb v prometnih nesrečah po letih
 ----------------------------------------------------
+
 Iz analize povprečnega števila oseb udeleženih v prometnih nesrečah lahko
 sklepamo, da so v prometnih nesrečah v povprečju udeležene manj kot 2 osebi.
 Največje povprečno število udeleženih oseb v prometnih nesrečah je bilo leta
 2015. Za podrobno analizo povprečnega števila oseb bom v nadaljevanju projekta
 razdelil osebe po vrsti udeleženca.
-```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 plt.rcParams['figure.figsize'] = [13,5]
     plt.plot(trafficDataByYear_df['Leto'], 
             trafficDataByYear_df['Število oseb'] / trafficDataByYear_df['Število nesreč'],'y-',label = 'Povprečno število oseb na prometno nesrečo '
@@ -267,12 +275,17 @@ plt.rcParams['figure.figsize'] = [13,5]
     plt.ylabel("Povprečno število oseb", size=13)
     plt.legend();
     plt.show()
-```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Normalizirano število prometnih nesreč po mesecih v letu 2018
-----------------------------------------------------
-Ker je število prometnih nesreč po mesecih zaradi različne dolžine mesecev lahko različno sem zaradi boljše predstave podatke pripravil na način, da sem jih normaliziral glede na število dni v posameznem mesecu. Iz analize sem ugotovil, da je bilo v letu 2018 največ nesreč v mesecu juniju 2018.
-```
+-------------------------------------------------------------
+
+Ker je število prometnih nesreč po mesecih zaradi različne dolžine mesecev lahko
+različno sem zaradi boljše predstave podatke pripravil na način, da sem jih
+normaliziral glede na število dni v posameznem mesecu. Iz analize sem ugotovil,
+da je bilo v letu 2018 največ nesreč v mesecu juniju 2018.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  # set up data
     trafficDataByMonth_df = df1[['DatumPN', 'Leto', 'Dan', 'Mesec', 'VNaselju','ZaporednaStevilkaPN']].copy()
     #-------------------------------------------------------------------------------------------------------------------
@@ -296,7 +309,7 @@ Ker je število prometnih nesreč po mesecih zaradi različne dolžine mesecev l
             trafficDataByMonth_df['Stevilo nesrec']/trafficDataByMonth_df['StDniVMesecu']
             ,  align='center', linewidth=1, alpha=0.75
             ,edgecolor='black', tick_label=month_list)
-``` 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Distribucija starosti povzročiteljev prometnih nesreč
 -----------------------------------------------------
@@ -305,7 +318,8 @@ Analiza starosti povzročiteljev prometnih nesreč kaže na to, da največ prome
 nesreč povzročijo osebe v zgodnjih 20 letih. To so osebe, ki imajo kratek
 vozniški stalež. Torej neizkušeni vozniki, ki v večini primerov precenjujejo
 svoje sposobnosti.
-```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   starost_df = df1
     starost_df = starost_df[['DatumPNConverted', 'Leto', 'Dan', 'Mesec', 'ZaporednaStevilkaOsebeVPN','VrstaUdelezenca', 'Povzrocitelj','Starost', 
                          'VozniskiStazVLetih','Spol','ZaporednaStevilkaPN']].copy()
@@ -318,54 +332,38 @@ svoje sposobnosti.
     plt.title("Distribucija starosti povrzočiteljev prometnih nesreč", size=16)
     plt.xlabel("Starost", size=13)
     plt.ylabel("Število prometnih nesreč", size=13)
-```
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Nadaljnji koraki
-==================
+================
 
 Struktura podatkov
 ==================
 
-Ker se je vir podatkov na spletni strani slovenske policije spremenil je v nadaljevanju opisana struktura.
-Struktura podatkovne baze prometnih nesreč
-------------------------------------------
-Nova struktura baze prometnih nesreč (PN):
--   številka za štetje in ločevanje posamezne prometne nesreče
--   klasifikacija nesreče glede na posledice (Izračuna se avtomatično glede na
-    najhujšo posledico pri udeležencih v prometni nesreči)
--   upravna enota, na območju katere se je zgodila prometna nesreča
--   datum nesreče (format: dd.mm.llll) 
--   ura nesreče (format: hh) 
--   indikator ali se je nesreča zgodila v naselju (D) ali izven (N)
--   lokacija nesreče
--   vrsta ceste ali naselja na kateri je prišlo do nesreče
--   oznaka ceste ali šifra naselja kjer je prišlo do nesreče
--   tekst ceste ali naselja, kjer je prišlo do nesreče
--   oznaka odseka ceste ali šifra ulice, kjer je prišlo do nesreče
--   tekst odseka ali ulice, kjer je prišlo do nesreče
--   točna stacionaža ali hišna številka, kjer je prišlo do nesreče
--   opis prizorišča nesreče
--   glavni vzrok nesreče
--   tip nesreče
--   vremenske okoliščine v času nesreče
--   stanje prometa v času nesreče
--   stanje vozišča v času nesreče
--   stanje površine vozišča v času nesreče
--   Geo Koordinata X (Gauß-Krüger-jev koordinatni sistem)
--   Geo Koordinata Y (Gauß-Krüger-jev koordinatni sistem)
--   številka za štetje in ločevanje oseb, udeleženih v prometnih nesrečah
--   kot kaj nastopa oseba v prometni nesreči
--   starost osebe (LL)
--   spol
--   upravna enota stalnega prebivališča
--   državljanstvo osebe
--   poškodba osebe
--   vrsta udeleženca v prometu
--   ali je oseba uporabljala varnostni pas ali čelado (polje se interpretira v
-    odvisnosti od vrste udeleženca) (Da/Ne)
--   vozniški staž osebe za kategorijo, ki jo potrebuje glede na vrsto udeleženca
-    v prometu (LL)
--   vozniški staž osebe za kategorijo, ki jo potrebuje glede na vrsto udeleženca
-    v prometu (MM)
--   vrednost alkotesta za osebo, če je bil opravljen (n.nn)
--   vrednost strokovnega pregleda za osebo, če je bil odrejen in so rezultati že
-    znani (n.nn)
+Ker se je vir podatkov na spletni strani slovenske policije spremenil je v
+nadaljevanju opisana struktura. Struktura podatkovne baze prometnih nesreč
+------------------------------------------ Nova struktura baze prometnih nesreč
+(PN): - številka za štetje in ločevanje posamezne prometne nesreče -
+klasifikacija nesreče glede na posledice (Izračuna se avtomatično glede na
+najhujšo posledico pri udeležencih v prometni nesreči) - upravna enota, na
+območju katere se je zgodila prometna nesreča - datum nesreče (format:
+dd.mm.llll)  - ura nesreče (format: hh)  - indikator ali se je nesreča zgodila v
+naselju (D) ali izven (N) - lokacija nesreče - vrsta ceste ali naselja na kateri
+je prišlo do nesreče - oznaka ceste ali šifra naselja kjer je prišlo do nesreče
+- tekst ceste ali naselja, kjer je prišlo do nesreče - oznaka odseka ceste ali
+šifra ulice, kjer je prišlo do nesreče - tekst odseka ali ulice, kjer je prišlo
+do nesreče - točna stacionaža ali hišna številka, kjer je prišlo do nesreče -
+opis prizorišča nesreče - glavni vzrok nesreče - tip nesreče - vremenske
+okoliščine v času nesreče - stanje prometa v času nesreče - stanje vozišča v
+času nesreče - stanje površine vozišča v času nesreče - Geo Koordinata X
+(Gauß-Krüger-jev koordinatni sistem) - Geo Koordinata Y (Gauß-Krüger-jev
+koordinatni sistem) - številka za štetje in ločevanje oseb, udeleženih v
+prometnih nesrečah - kot kaj nastopa oseba v prometni nesreči - starost osebe
+(LL) - spol - upravna enota stalnega prebivališča - državljanstvo osebe -
+poškodba osebe - vrsta udeleženca v prometu - ali je oseba uporabljala varnostni
+pas ali čelado (polje se interpretira v odvisnosti od vrste udeleženca) (Da/Ne)
+- vozniški staž osebe za kategorijo, ki jo potrebuje glede na vrsto udeleženca v
+prometu (LL) - vozniški staž osebe za kategorijo, ki jo potrebuje glede na vrsto
+udeleženca v prometu (MM) - vrednost alkotesta za osebo, če je bil opravljen
+(n.nn) - vrednost strokovnega pregleda za osebo, če je bil odrejen in so
+rezultati že znani (n.nn)
